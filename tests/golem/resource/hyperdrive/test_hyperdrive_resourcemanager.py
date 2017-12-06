@@ -43,7 +43,7 @@ class ResourceSetUp(TempDirFixture):
             self.task_id)
         self.test_file = os.path.join(self.resources_dir, 'test_file.one.2')
         self.test_dir = os.path.join(self.resources_dir, 'test_dir.one.2')
-        self.test_dir_file = os.path.join(self.test_dir, 'dir_file.one.2')
+        self.test_dir_file = os.path.join(self.resources_dir, 'dir_file.one.2')
 
         self.split_resources = [
             ['test_file.one.two'],
