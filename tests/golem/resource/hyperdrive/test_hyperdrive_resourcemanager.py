@@ -1,7 +1,8 @@
 import os
 import uuid
+from pathlib import Path
 from unittest import skipIf
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from requests import ConnectionError
 
@@ -185,40 +186,41 @@ class TestResourceManagerBase(ResourceSetUp):
         ]
 
 
+@patch('golem.network.hyperdrive.client.HyperdriveClient.restore')
+@patch('golem.network.hyperdrive.client.HyperdriveClient.add')
 class TestHyperdriveResourceManager(TempDirFixture):
 
-    @patch('golem.network.hyperdrive.client.HyperdriveClient.restore')
-    @patch('golem.network.hyperdrive.client.HyperdriveClient.add')
-    def test_add_files(self, add, restore):
-        dir_manager = DirManager(self.tempdir)
-        resource_manager = HyperdriveResourceManager(dir_manager)
+    def setUp(self):
+        super().setUp()
 
-        task_id = str(uuid.uuid4())
-        resource_hash = None
+        self.task_id = str(uuid.uuid4())
+        self.handle_retries = Mock()
+        self.dir_manager = DirManager(self.tempdir)
+        self.resource_manager = HyperdriveResourceManager(self.dir_manager)
+        self.resource_manager._handle_retries = self.handle_retries
+
+        file_name = 'test_file'
+        file_path = os.path.join(self.tempdir, file_name)
+        Path(file_path).touch()
+
+        self.files = {file_path: file_name}
+
+    def test_add_files_invalid_paths(self, add, restore):
         files = {str(uuid.uuid4()): 'does_not_exist'}
-
-        # Invalid file paths
-        resource_manager._add_files(files, task_id, resource_hash=resource_hash)
+        self.resource_manager._add_files(files, self.task_id,
+                                         resource_hash=None)
         assert not add.called
         assert not restore.called
 
-        # Create files
-        file_name = 'test_file'
-        file_path = os.path.join(self.tempdir, file_name)
-        files = {file_path: file_name}
-        open(file_path, 'w').close()
-
-        # Valid file paths, empty resource hash
-        resource_manager._add_files(files, task_id, resource_hash=resource_hash)
+    def test_add_files_empty_resource_hash(self, add, restore):
+        self.resource_manager._add_files(self.files, self.task_id,
+                                         resource_hash=None)
         assert not restore.called
         assert add.called
 
-        restore.reset_mock()
-        add.reset_mock()
-
-        # Valid file paths, non-empty resource hash
-        resource_hash = str(uuid.uuid4())
-        resource_manager._add_files(files, task_id, resource_hash=resource_hash)
+    def test_add_files_with_resource_hash(self, add, restore):
+        self.resource_manager._add_files(self.files, self.task_id,
+                                         resource_hash=str(uuid.uuid4()))
         assert restore.called
         assert not add.called
 
