@@ -7,12 +7,12 @@ from unittest.mock import patch, Mock
 from requests import ConnectionError
 
 from golem.network.hyperdrive.client import HyperdriveClient
-from tests.golem.resource.base.common import AddGetResources
 from golem.resource.dirmanager import DirManager
 from golem.resource.hyperdrive.resource import Resource
 from golem.resource.hyperdrive.resourcesmanager import \
     HyperdriveResourceManager, DummyResourceManager
 from golem.testutils import TempDirFixture
+from tests.golem.resource.base.common import AddGetResources
 
 
 def running():
